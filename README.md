@@ -48,7 +48,7 @@ dezipped archive  | ```grep -r -a "ORA-[[:digit:]]\{5\}" folder``` | 1m4s
 ## With gogrep
 
 Test set | Command | Duration | Remark
--|-|-|- 
+---------|---------|----------|-------- 
 zipped archive  | ```gogrep ORA-\\d\{5\} zipfile.zip``` | 1m39s | Name of archived file is visible
 dezipped archive | ```gogrep ORA-\\d\{5\} folder``` | 2m5s | Same command for folders and zipped files
 

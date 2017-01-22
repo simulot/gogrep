@@ -38,8 +38,8 @@ binaries for a varierty of OSes and hardware.
 
 ## Standard tools
 
-Test set | Command | Duration | Remark
--|-|- | -
+Test set|Command|Duration|Remark
+--------|-------|--------|-------
 zipped archive | ```unzip -d temp zipfile.zip && grep```|5m2s |
 zipped archive | ```for file in $1; do unzip -c "$file" \| grep -a "ORA-[[:digit:]]\{5\}"; done```| 1m22 | Pretty fast, but the name of file is lost
 zipped archive | ```zipgrep ....``` | more than 2h | 
@@ -48,7 +48,7 @@ dezipped archive  | ```grep -r -a "ORA-[[:digit:]]\{5\}" folder``` | 1m4s
 ## With gogrep
 
 Test set | Command | Duration | Remark
--|-|-| - 
+-|-|-|- 
 zipped archive  | ```gogrep ORA-\\d\{5\} zipfile.zip``` | 1m39s | Name of archived file is visible
 dezipped archive | ```gogrep ORA-\\d\{5\} folder``` | 2m5s | Same command for folders and zipped files
 

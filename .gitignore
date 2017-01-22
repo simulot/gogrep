@@ -2,6 +2,10 @@
 *.o
 *.a
 *.so
+debug
+zipgrep
+zipgrep.exe
+
 
 # Folders
 _obj

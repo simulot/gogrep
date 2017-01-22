@@ -13,11 +13,21 @@ This was my motivation for wrtiting this utility.
 ## Requierments for a tool to search into Zip archives
 
 * faster than unzipping then search
-* simple to use
-* windows and linux bianries
+* simple to use, one tool for searching files, folders, archives
+* read hudge .zip files
+* works with plain ascii, but also with utf-8, utf-16 encoded files
+* windows and linux binaries
 
-And, that would be great to have a CSV, or better Excel output.
+And, nice to have features:
+* CSV output
+* Excel output, why not?
+* Read tgz files,
+* Read tar files
 
+## TODO:
+- [*] ascii and UTF-8 
+- [ ] UTF-16 reading
+- [ ] CSV output
 
 ### Faster than unzipping then search
 Grep is fast! 5 seconds on my testing file set. So, I don't expect 

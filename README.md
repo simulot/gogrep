@@ -9,7 +9,7 @@ To search something into logs, archives must be unziped
 before using a search tool like grep or FINDSTR. This 
 process need some disk space, and is very time consuming.
 
-This was my motivation for wrtiting this utility.
+This was my motivation for writing this utility.
 
 ## Requierments for a tool to search into Zip archives
 
@@ -17,9 +17,10 @@ This was my motivation for wrtiting this utility.
 * simple to use, one tool for searching files, folders, archives
 * search in hudge .zip
 * search in a collection of zip files
+* windows and linux binaries at least
+* search only in selected files inside archives
 * search in plain ascii files, but also in utf-8, utf-16 encoded files
 * search occurence of several pattern in files. Exemple output files having string "ERROR" and and a given GUID
-* windows and linux binaries at least
 
 And, nice to have features:
 * CSV output
@@ -30,9 +31,13 @@ And, nice to have features:
 
 ## TODO:
 - [*] ascii and UTF-8 
+- [ ] zip content file mask
 - [ ] UTF-16 reading
 - [ ] CSV output
-- [ ] Explore tgz files
+- [ ] colorized output ala grep
+- [ ] Search files having several strings
+
+
  
 ### Faster than unzipping then search
 Grep is fast! 5 seconds on my testing file set. So, I don't expect 

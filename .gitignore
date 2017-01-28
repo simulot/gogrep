@@ -3,9 +3,10 @@
 *.a
 *.so
 debug
-zipgrep
-zipgrep.exe
-
+gogrep
+gogrep.exe
+param.txt
+*.pprof
 
 # Folders
 _obj

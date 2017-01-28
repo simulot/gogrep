@@ -1,7 +1,0 @@
-ORA-[[:digit:]]{5}
-#fmt
-#*.go
-#/mnt/DATA-NTFS/00-ResponsiveConsulting/01-Clients/Flucticiel/Europcar/logs/unzipped/LOGSFiles_161110
-#/mnt/DATA-NTFS/00-ResponsiveConsulting/01-Clients/Flucticiel/Europcar/logs/
-#/mnt/DATA-NTFS/00-ResponsiveConsulting/01-Clients/Flucticiel/Europcar/logs/unzipped/Logfiles/AnyERP
-/mnt/DATA-NTFS/00-ResponsiveConsulting/01-Clients/Flucticiel/Europcar/logs/zipped/LOG_BW_1004_2016-11-28.zip

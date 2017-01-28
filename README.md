@@ -14,21 +14,25 @@ This was my motivation for wrtiting this utility.
 
 * faster than unzipping then search
 * simple to use, one tool for searching files, folders, archives
-* read hudge .zip files
-* works with plain ascii, but also with utf-8, utf-16 encoded files
-* windows and linux binaries
+* search in hudge .zip
+* search in a collection of zip files
+* search in plain ascii files, but also in utf-8, utf-16 encoded files
+* search occurence of several pattern in files. Exemple output files having string "ERROR" and and a given GUID
+* windows and linux binaries at least
 
 And, nice to have features:
 * CSV output
 * Excel output, why not?
 * Read tgz files,
 * Read tar files
+* colorized output
 
 ## TODO:
 - [*] ascii and UTF-8 
 - [ ] UTF-16 reading
 - [ ] CSV output
-
+- [ ] Explore tgz files
+ 
 ### Faster than unzipping then search
 Grep is fast! 5 seconds on my testing file set. So, I don't expect 
 to beat it on pure performance area. 

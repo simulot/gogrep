@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/simulot/gogrep/cmd/gogrep"
 	// Register common walkers
-	"github.com/simulot/gogrep/gogrep"
-	_ "github.com/simulot/golib/file/walker/zip"
+	_ "github.com/simulot/golib/file/walker/zipwalker"
 )
 
 func main() {

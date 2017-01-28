@@ -30,8 +30,8 @@ And, nice to have features:
 * colorized output
 
 ## TODO:
-- [*] ascii and UTF-8 
-- [ ] zip content file mask
+- [X] ascii and UTF-8 
+- [X] zip content file mask
 - [ ] UTF-16 reading
 - [ ] CSV output
 - [ ] colorized output ala grep

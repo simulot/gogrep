@@ -8,6 +8,8 @@ generates numberous and detailled log files. During 24h, we have
 To search something into logs, archives must be unziped 
 before using a search tool like grep or FINDSTR. This 
 process need some disk space, and is very time consuming.
+Furthermore, FINDSTR windows utility doesn't handle regular 
+expression correctly, and have some nasty bugs. 
 
 This was my motivation for writing this utility.
 
@@ -34,8 +36,7 @@ And, nice to have features:
 - [X] zip content file mask
 - [ ] UTF-16 reading
 - [ ] CSV output
-- [ ] colorized output ala grep
-- [ ] Search files having several strings
+- [X] colorized output ala grep
 
 
  

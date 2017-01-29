@@ -1,5 +1,5 @@
 # gogrep
-:construction:NOT WORKING YET:construction:
+:construction: Still under construction, but can be tested :construction:
 
 In my daily job, I'm working on an Windows application that 
 generates numerous and detailed log files. During 24h, we have 
@@ -35,7 +35,7 @@ And, nice to have features:
 ## TODO:
 - [X] ascii and UTF-8 
 - [X] zip content file mask
-- [ ] UTF-16 reading
+- [X] UTF-16 reading
 - [ ] CSV output
 - [X] colorized output ala grep
 

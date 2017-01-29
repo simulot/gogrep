@@ -35,7 +35,7 @@ And, nice to have features:
 ## TODO:
 - [X] ascii and UTF-8 
 - [X] zip content file mask
-- [ ] UTF-16 reading
+- [X] UTF-16 reading
 - [ ] CSV output
 - [X] colorized output ala grep
 

@@ -2,27 +2,28 @@
 :construction:NOT WORKING YET:construction:
 
 In my daily job, I'm working on an Windows application that 
-generates numberous and detailled log files. During 24h, we have 
+generates numerous and detailed log files. During 24h, we have 
 100 thousands of files, for several gigabytes. They are zipped daily.
 
 To search something into logs, archives must be unziped 
 before using a search tool like grep or FINDSTR. This 
 process need some disk space, and is very time consuming.
-Furthermore, FINDSTR windows utility doesn't handle regular 
-expression correctly, and have some nasty bugs. 
+Furthermore, FINDSTR windows' utility doesn't handle regular 
+expressions correctly, and has some nasty bugs [(see ss64.com)](http://ss64.com/nt/findstr.html). 
 
 This was my motivation for writing this utility.
 
-## Requierments for a tool to search into Zip archives
+## Requirements for a tool to search into Zip archives
 
 * faster than unzipping then search
 * simple to use, one tool for searching files, folders, archives
-* search in hudge .zip
+* search in huge .zip
 * search in a collection of zip files
 * windows and linux binaries at least
 * search only in selected files inside archives
 * search in plain ascii files, but also in utf-8, utf-16 encoded files
-* search occurence of several pattern in files. Exemple output files having string "ERROR" and and a given GUID
+* search occurrence of several pattern in files. 
+Example output files having string "ERROR" and and a given GUID
 
 And, nice to have features:
 * CSV output
@@ -44,7 +45,7 @@ And, nice to have features:
 Grep is fast! 5 seconds on my testing file set. So, I don't expect 
 to beat it on pure performance area. 
 
-Speed gain comes from skipping itermediate file storage.
+Speed gain comes from skipping intermediate file storage.
 
 
 ### Simple to use
@@ -53,7 +54,7 @@ No need to implement the rich palette of grep options. Let go
 
 ### Cross platform
 Thanks to Go compiler, it is (really) easy to compile 
-binaries for a varierty of OSes and hardware. 
+binaries for a variety of OSes and hardware. 
 
 # Performances
 

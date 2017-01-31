@@ -7,7 +7,7 @@ cmd/gogrep
 cmd/gogrep.exe
 param.txt
 *.pprof
-
+desktop.ini
 # Folders
 _obj
 _test

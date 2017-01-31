@@ -3,8 +3,8 @@
 *.a
 *.so
 debug
-gogrep
-gogrep.exe
+cmd/gogrep
+cmd/gogrep.exe
 param.txt
 *.pprof
 

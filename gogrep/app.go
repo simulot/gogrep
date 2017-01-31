@@ -14,6 +14,8 @@ import (
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
 
+var isWindowsOS = runtime.GOOS == "windows"
+
 // AppSettings represents application settings and run execution
 type AppSettings struct {
 	regexp       *regexp.Regexp
@@ -131,7 +133,11 @@ func (a *AppSettings) Commandline() error {
 			}
 			return nil
 		}).StringVar(&a.mask)
-	app.Flag("color", "Use colors").Default("true").BoolVar(&a.useColors)
+	colorFlag := "true"
+	if isWindowsOS {
+		colorFlag = "false"
+	}
+	app.Flag("color", "Use colors").Default(colorFlag).BoolVar(&a.useColors)
 	app.Arg("PATTERN", "PATTERN").StringVar(&a.string)
 	app.Arg("file", "files to be searched").StringsVar(&a.files)
 	app.Action(func(c *kingpin.ParseContext) error {

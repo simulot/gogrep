@@ -37,6 +37,17 @@ type colorSet struct {
 	archive, file, line, unmatched, matched func(string) string
 }
 
+type Worker struct {
+	limiter chan interface{}
+}
+
+func NewWorker(number int) (*Worker, func()) {
+	w := make(chan bool, number)
+	for i := 0 ; i<number;i++{
+		w <- interface{}{}
+	}
+}
+
 // Run the application
 func (a *AppSettings) Run() {
 	in := make(chan interface{})
@@ -123,7 +134,7 @@ func (a *AppSettings) Commandline() error {
 			return nil
 		}).Bool()
 	app.Flag("num-worker", "Number of worker to be used").
-		Default(fmt.Sprintf("%d", runtime.NumCPU()*2+1)).IntVar(&a.numWorker)
+		Default(fmt.Sprintf("%d", runtime.NumCPU())).IntVar(&a.numWorker)
 	app.Flag("mask", "search only in files following the mask").Short('m').Default("*.*").
 		Action(func(c *kingpin.ParseContext) error {
 			if len(a.mask) > 0 && a.mask != "*.*" {

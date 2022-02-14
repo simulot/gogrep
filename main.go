@@ -4,12 +4,10 @@ import (
 	"fmt"
 	"os"
 	"time"
-
-	"github.com/pkg/profile"
 )
 
 func main() {
-	defer profile.Start(profile.CPUProfile, profile.ProfilePath(".")).Stop()
+	// defer profile.Start(profile.CPUProfile, profile.ProfilePath(".")).Stop()
 	app := &App{}
 	err := app.Commandline()
 	if err != nil {

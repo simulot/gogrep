@@ -175,7 +175,7 @@ func (a *App) ProcessZipFile(r io.Reader, archive fs.File) error {
 
 type tarFile struct {
 	*tar.Header
-	*tar.Reader
+	io.Reader
 }
 
 func (tf *tarFile) Stat() (fs.FileInfo, error) {
@@ -195,7 +195,7 @@ func (a *App) ProcessTGZ(r io.Reader, archive fs.File) error {
 		return err
 	}
 
-	// group := errgroup.Group{}
+	group := errgroup.Group{}
 	tarReader := tar.NewReader(zipReader)
 
 	for {
@@ -213,15 +213,25 @@ func (a *App) ProcessTGZ(r io.Reader, archive fs.File) error {
 			io.Copy(ioutil.Discard, tarReader)
 			continue
 		}
-		file := &tarFile{
-			Header: header,
-			Reader: tarReader,
-		}
-		err = a.ProcessFile(file, fi.Name())
+
+		b, err := io.ReadAll(tarReader)
 		if err != nil {
-			return fmt.Errorf("can't process file '%s' from archive '%s', %w", header.Name, fi.Name(), err)
+			return err
 		}
+		a.limiter.Start()
+		group.Go(func() error {
+			defer a.limiter.Done()
+			file := &tarFile{
+				Header: header,
+				Reader: bytes.NewReader(b),
+			}
+			err = a.ProcessFile(file, fi.Name())
+			if err != nil {
+				return fmt.Errorf("can't process file '%s' from archive '%s', %w", header.Name, fi.Name(), err)
+			}
+			return err
+		})
 	}
-	// return group.Wait()
-	return err
+
+	return group.Wait()
 }

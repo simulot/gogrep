@@ -12,10 +12,14 @@
       "program": "${fileDirname}",
       // "args": ["ORA-\\d{5}","DATA/BIGLOG.zip"]
       "args": [
-        // "--string" ,
+        "--string" ,
         "--color",
         // "--mask=BWOMDataVerification_PostCall_*.*" , 
-        "ORA-\\d{5}","DATA/LogFiles.tar.gz"]
+        // "ORA-\\d{5}","DATA/LogFiles.tar.gz"]
+        // "ORA-00001","DATA/LogFiles.tar.gz"]
+        "ORA-00001","DATA/LogFiles"]
+        // "ORA-00001","DATA/BIGLOG.zip"]
+        // "ORA-\\d{5}","DATA/BIGLOG.zip"]
     }
   ]
 }

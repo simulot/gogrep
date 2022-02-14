@@ -35,36 +35,36 @@ type App struct {
 	filesParsed int64
 	hitCount    int64
 
-	limiter *Worker
+	limiter *Limiter
 }
 
 type colorSet struct {
 	archive, file, line, unmatched, matched func(string) string
 }
 
-type Worker struct {
+type Limiter struct {
 	limiter chan bool
 }
 
-func NewWorker(number int) *Worker {
-	w := Worker{
+func NewLimiter(number int) *Limiter {
+	l := Limiter{
 		limiter: make(chan bool, number),
 	}
 
-	return &w
+	return &l
 }
 
-func (wk *Worker) Start() {
-	wk.limiter <- true
+func (l *Limiter) Start() {
+	l.limiter <- true
 }
 
-func (wk *Worker) Done() {
-	<-wk.limiter
+func (l *Limiter) Done() {
+	<-l.limiter
 }
 
 // Run the application
 func (a *App) Run() error {
-	a.limiter = NewWorker(a.numWorker)
+	a.limiter = NewLimiter(a.numWorker)
 	group := errgroup.Group{}
 
 	// one go routine per OS file
@@ -84,6 +84,7 @@ func (a *App) Run() error {
 					if d.IsDir() {
 						return nil
 					}
+					a.limiter.Start()
 					group.Go(func() error {
 						defer func() {
 							a.limiter.Done()

@@ -4,10 +4,12 @@ import (
 	"fmt"
 	"os"
 	"time"
+
+	"github.com/pkg/profile"
 )
 
 func main() {
-	// defer profile.Start(profile.MemProfileAllocs, profile.ProfilePath(".")).Stop()
+	defer profile.Start(profile.CPUProfile, profile.ProfilePath(".")).Stop()
 	app := &App{}
 	err := app.Commandline()
 	if err != nil {
@@ -21,8 +23,8 @@ func main() {
 		os.Exit(-1)
 	}
 	d := time.Since(t0).Round(time.Millisecond)
-	fmt.Println("Total time", d)
 	fmt.Println("Hits", app.hitCount)
+	fmt.Println("Total time", d)
 	fmt.Println("File parsed", app.filesParsed)
 	fmt.Println("Total", ByteCounter(app.bytesRead))
 	fmt.Println("Speed", BytePerSecond{app.bytesRead, d})

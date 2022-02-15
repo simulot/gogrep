@@ -31,95 +31,33 @@ This was my motivation for writing this utility.
 - [X] read zip archives
 - [X] read tar.gz archives
 - [X] UTF-16 reading
-- [ ] CSV output
-- [X] colorized output ala grep
+- [_] CSV output
+- [X] colorized output ala grep (on linux)
 
 
- 
-### Faster than unzipping then search
-Grep is fast! 5 seconds on my testing file set. So, I don't expect 
-to beat it on pure performance area. 
+## Faster than unzipping then search
+Speed gain comes from skipping deziping file before the search..
 
-Speed gain comes from skipping intermediate file storage.
+## Faster than grep when searching across multiple files
+A GO compiled program is known to be less efficient than a c program. Go REGEXP is also less efficient than c REGXEP. 
+Nevertheless, goroutines allows to handle several files at a time. I get On a 16 core SSD laptop, gogrep is 2 times faster than grep. 
+## Simple to use
+Windows doesn't provide decent grep like tool. gogrep is self sufficient.
 
-
-### Simple to use
-No need to implement the rich palette of grep options. Let go
- strait to the point: search pattern in archived files.
-
-### Cross platform
+## Cross platform
 Thanks to Go compiler, it is (really) easy to compile 
 binaries for a variety of OSes and hardware. 
 
-# Performances
 
-## Standard tools
-
-Test set|Command|Duration|Remark
---------|-------|--------|-------
-zipped archive | ```unzip -d temp zipfile.zip && grep```|5m2s |
-zipped archive | ```for file in $1; do unzip -c "$file" \| grep -a "ORA-[[:digit:]]\{5\}"; done```| 1m22 | Pretty fast, but the name of file is lost
-zipped archive | ```zipgrep ....``` | more than 2h | 
-dezipped archive  | ```grep -r -a "ORA-[[:digit:]]\{5\}" folder``` | 1m4s
-
-## With gogrep
-
-Test set | Command | Duration | Remark
----------|---------|----------|-------- 
-zipped archive  | ```gogrep ORA-\\d\{5\} zipfile.zip``` | 1m39s | Name of archived file is visible
-dezipped archive | ```gogrep ORA-\\d\{5\} folder``` | 2m5s | Same command for folders and zipped files
-
-
-## EDIT: 5 years later, let's refactor it
-I got an issue on github about binarie release. Somone is interested in my work!  Since the original project, my job has changed. I don't need anymore to crawl huge archives to find subtil errors in the log.
+## Side note : 5 years later, let's refactor it!
+I got an issue on github about binaries release. Someone is interested in my work!  Since the original project, my job has changed. I don't need anymore to crawl huge archives to find subtile errors in the log.
 
 Nevertheless, I gave a look to the code, and I found it convoluted and unnecessary complex. I have now a better understanding of Go features, when use them, when not. I have also learned that less lines of code produce less errors. 
 
 Let see I can improve that! I have refactored the code 
-- to get rid of complexity 
+- to simplify it
 - to use standard library instead of my own code
 - to reduce memory allocations and use sync.pool
-- to use concurency just where it make sense
+- to use concurrency just where it makes sense
 
-And the result is indeed far better. On the same dataset, same hardware and same version of go compiler, the program run more than 5 times faster. Not too bad, is it?
-
-The original version takes 6.3s to read the data set.
-
-``` sh
-$ time ./gogrep  ORA-[0-9]\{5\} ../DATA/LogFiles
-ImportInvoiceBT__SVC001_20161117100102.log:10346:17/11/2016 10:01:14.602 [ERROR  ]ORA-00001: unique constraint (BASW.EXT_BT_ACK_STATUS_PK) violated
-ImportInvoiceBT__SVC001_20161117094102.log:12502:17/11/2016 10:01:14.633 [ERROR  ]ORA-00001: unique constraint (BASW.EXT_BT_ACK_STATUS_PK) violated
-
-real    0m6,386s
-user    0m48,467s
-sys     0m3,932s
-j
-```
-
-When the new version takes only 1.725s, yes 3.7 faster! CPU utilization show a sharper peek denoting full utilisation of all CPU cores
-
-```sh
-$ time ./gogrep ORA-[0-9]\{5\} ../tests/gogrep/DATA/LogFiles
-ImportInvoiceBT__SVC001_20161117100102.log(10346):17/11/2016 10:01:14.602 [ERROR  ]ORA-00001: unique constraint (BASW.EXT_BT_ACK_STATUS_PK) violated
-ImportInvoiceBT__SVC001_20161117094102.log(12502):17/11/2016 10:01:14.633 [ERROR  ]ORA-00001: unique constraint (BASW.EXT_BT_ACK_STATUS_PK) violated
-
-
-real    0m1,725s
-user    0m17,157s
-sys     0m1,442s
-```
-
-Well, how it is comparing to grep itself?
-
-
-```
-$ time grep -r "ORA-[0-9]\{5\}" ../tests/gogrep/DATA/LogFiles
-ImportInvoiceBT__SVC001_20161117094102.log:17/11/2016 10:01:14.633 [ERROR  ]ORA-00001: unique constraint (BASW.EXT_BT_ACK_STATUS_PK) violated
-ImportInvoiceBT__SVC001_20161117100102.log:17/11/2016 10:01:14.602 [ERROR  ]ORA-00001: unique constraint (BASW.EXT_BT_ACK_STATUS_PK) violated
-
-real    0m3,585s
-user    0m2,639s
-sys     0m0,943s
-```
-
-2 times faster than grep! 💪
+And the result is indeed far better. On the same dataset, same hardware and same version of go compiler, the program runs more than 5 times faster. Not too bad, is it?

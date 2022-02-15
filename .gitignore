@@ -3,10 +3,11 @@
 *.a
 *.so
 debug
-cmd/gogrep
-cmd/gogrep.exe
+gogrep
+gogrep.exe
 param.txt
 *.pprof
+*.pdf
 desktop.ini
 # Folders
 _obj
@@ -28,3 +29,4 @@ _testmain.go
 *.test
 *.prof
 DATA/*
+gogrep

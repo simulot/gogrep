@@ -11,6 +11,8 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"path/filepath"
+	"strings"
 	"sync"
 	"sync/atomic"
 
@@ -32,6 +34,11 @@ func (a *App) ProcessFile(f fs.File, archive string) error {
 		return nil
 	}
 	name := fInfo.Name()
+	ext := strings.ToLower(filepath.Ext(name))
+	switch ext {
+	case ".gsheet", ".gslides", ".gdoc", ".eps":
+		return nil
+	}
 	_, err = f.Read(sniff)
 	if err != nil && err != io.EOF {
 		return err
@@ -39,21 +46,23 @@ func (a *App) ProcessFile(f fs.File, archive string) error {
 
 	mr := io.MultiReader(bytes.NewReader(sniff), f)
 	t := http.DetectContentType(sniff)
-	switch t {
-	case "application/zip":
+	switch {
+	case t == "application/zip" && ext == ".zip":
 		return a.ProcessZipFile(mr, f)
-	case "application/x-gzip":
+	case t == "application/zip" && ext == ".xlsx":
+		return a.ProcessXlsxFile(mr, name)
+	case t == "application/x-gzip":
 		return a.ProcessTGZ(mr, f)
 	// case "application/x-rar-compressed"
 	// case "application/x-rar-compressed"
-	case "text/plain; charset=utf-16be":
+	case t == "text/plain; charset=utf-16be":
 		return a.ProcessUTF16be(mr, name, archive)
-	case "text/plain; charset=utf-16le":
+	case t == "text/plain; charset=utf-16le":
 		return a.ProcessUTF16le(mr, name, archive)
-	case "text/plain; charset=utf-8":
+	case t == "text/plain; charset=utf-8" || t == "text/xml; charset=utf-8" || t == "application/octet-stream":
 		return a.ProcessUTF8(mr, name, archive)
 	default:
-		fmt.Println("Skiping", name, t)
+		//fmt.Println("Skiping", name, t)
 	}
 
 	return nil

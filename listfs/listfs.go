@@ -66,7 +66,7 @@ func (lfs *ListFS) run(params []string) {
 	return
 }
 
-func (lfs *ListFS) Next(mask string) (f fs.File, n string, err error) {
+func (lfs *ListFS) Next() (fsys fs.FS, n string, err error) {
 	var ok bool
 	m := true
 	var item item
@@ -76,19 +76,10 @@ func (lfs *ListFS) Next(mask string) (f fs.File, n string, err error) {
 			err = io.EOF
 			return
 		}
-		n = item.name
-		if ok && len(mask) > 0 {
-			m, _ = filepath.Match(mask, filepath.Base(n))
-			if !m {
-				m = true
-				continue
-			}
-		}
+		fsys, n, err = item.fsys, item.name, item.err
 		if item.err != nil || !m {
 			return nil, "", item.err
 		}
-		err = nil
-		f, err = item.fsys.Open(item.name)
 		return
 	}
 	return nil, "", io.EOF

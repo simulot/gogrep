@@ -8,8 +8,13 @@ import (
 	"github.com/xuri/excelize/v2"
 )
 
-func (a *App) ProcessXlsxFile(f fs.File, name, archive string) error {
+func (a *App) ProcessXlsxFile(fsys fs.FS, name, archive string) error {
 	atomic.AddInt64(&a.filesParsed, 1)
+	f, err := fsys.Open(name)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
 	wb, err := excelize.OpenReader(a.CountReader(f))
 	if err != nil {
 		return err

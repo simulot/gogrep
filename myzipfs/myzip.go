@@ -10,7 +10,6 @@ import (
 	"bytes"
 	"io"
 	"io/fs"
-	"path/filepath"
 )
 
 type ZipFs struct {
@@ -88,19 +87,15 @@ func (de DirEntry) Type() fs.FileMode {
 	return de.Mode()
 }
 
-func (zfs *ZipFs) Next(mask string) (fs.File, string, error) {
+func (zfs *ZipFs) Next() (fs.FS, string, error) {
 	for ; zfs.index < len(zfs.Reader.File); zfs.index++ {
 		f := zfs.Reader.File[zfs.index]
 		zfs.index++
 		if f.FileInfo().IsDir() {
 			continue
 		}
-		m, _ := filepath.Match(mask, filepath.Base(f.Name))
-		if !m {
-			continue
-		}
-		r, err := zfs.Reader.Open(f.Name)
-		return r, f.Name, err
+
+		return zfs, f.Name, nil
 	}
 	return nil, "", io.EOF
 }

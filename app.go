@@ -89,7 +89,7 @@ func (a *App) OutputHit(h Hit) {
 func (a *App) Commandline() error {
 	flag.BoolVar(&a.count, "count", false, "Count matching lines")
 	flag.BoolVar(&a.ignoreCase, "ignore-case", false, "Ignore case distinction")
-	flag.BoolVar(&a.stringExpSearch, "s", true, "PATTERN is a simple string")
+	flag.BoolVar(&a.stringExpSearch, "s", false, "PATTERN is a simple string")
 	flag.IntVar(&a.numWorker, "num-worker", runtime.NumCPU(), "Number of worker to be used")
 	flag.StringVar(&a.mask, "mask", "*.*", "search only in files following the mask inside archive file")
 	flag.BoolVar(&a.useColors, "color", !isWindowsOS, "Use colored outputs")

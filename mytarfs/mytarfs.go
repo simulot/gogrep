@@ -5,8 +5,6 @@ import (
 	"compress/gzip"
 	"io"
 	"io/fs"
-	"io/ioutil"
-	"path/filepath"
 )
 
 /*
@@ -18,6 +16,7 @@ mytarfs implements a sort of fs.FS interface for tgz files
 
 type TgzFs struct {
 	*tar.Reader
+	current *tar.Header
 }
 
 func Open(fsys fs.FS, name string) (*TgzFs, error) {
@@ -43,7 +42,7 @@ func Reader(r io.Reader, name string) (*TgzFs, error) {
 // Implement fs.FS. Next opens the next file in the archive that match the mask.
 // It returns a fs.File, or io.EOF when the end of the archive is reached.
 
-func (tgz *TgzFs) Next(mask string) (fs.File, string, error) {
+func (tgz *TgzFs) Next() (fs.FS, string, error) {
 	var h *tar.Header
 	var err error
 	for {
@@ -54,21 +53,19 @@ func (tgz *TgzFs) Next(mask string) (fs.File, string, error) {
 		if h.Typeflag != tar.TypeReg {
 			continue
 		}
-		if len(mask) > 0 {
-			m, _ := filepath.Match(mask, h.Name)
-			if !m {
-				// Skip uninteresting files
-				io.Copy(ioutil.Discard, tgz)
-				continue
-			}
-		}
 		break
 	}
+	tgz.current = h
+	return tgz, h.Name, nil
 
+}
+
+func (tgz *TgzFs) Open(name string) (fs.File, error) {
 	return &TgzFile{
 		Reader: tgz,
-		info:   h.FileInfo(),
-	}, h.FileInfo().Name(), err
+		info:   tgz.current.FileInfo(),
+	}, nil
+
 }
 
 type TgzFile struct {

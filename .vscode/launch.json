@@ -12,7 +12,7 @@
       "program": "${fileDirname}",
       // "args": ["ORA-\\d{5}","DATA/BIGLOG.zip"]
       "args": [
-        "-s" ,
+        "-s=false" ,
         "-color",
         "-num-worker=1",
         // "--mask=BWOMDataVerification_PostCall_*.*" , 
@@ -21,7 +21,7 @@
         //"20633","C:/temp/2022-07-27/AnyERPFiles_270722_1012.zip"]
         // "ORA-00001","DATA/BIGLOG.zip"]
         // "ORA-\\d{5}","DATA/BIGLOG.zip"]
-        "71958491", "C:/Users/jf.cassan/Documents/data/invoicesfiles/archives"
+        "20633", "C:/Users/jf.cassan/Documents/data/invoicesfiles/archives"
     }
   ]
 }

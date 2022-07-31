@@ -21,12 +21,12 @@ import (
 )
 
 type Nexter interface {
-	Next(mask string) (fs.File, string, error)
+	Next() (fs.FS, string, error)
 }
 
 func (a *App) ProcessArchive(n Nexter, archive string) error {
 	for {
-		f, name, err := n.Next(a.mask)
+		fsys, name, err := n.Next()
 		if err == io.EOF {
 			return nil
 		}
@@ -34,38 +34,47 @@ func (a *App) ProcessArchive(n Nexter, archive string) error {
 			return err
 		}
 
-		err = a.ProcessAnyFile(f, name, archive)
+		err = a.ProcessAnyFile(fsys, name, archive)
 		if err != nil {
 			return err
 		}
 	}
-	return nil
 }
 
 // Process any file to apply the appropriate treatment for zip, xlsx, tar, tgz files, and handling char set for text files
-func (a *App) ProcessAnyFile(f fs.File, name string, archive string) error {
-	defer f.Close()
+func (a *App) ProcessAnyFile(fsys fs.FS, name string, archive string) error {
 
 	ext := strings.ToLower(filepath.Ext(name))
 	switch ext {
 	case ".gsheet", ".gslides", ".gdoc", ".eps":
 		return nil // Discard gsuite files that would need a special treatment
 	case ".xlsx":
-		return a.ProcessXlsxFile(f, name, archive)
+		return a.ProcessXlsxFile(fsys, name, archive)
 	case ".tgz":
-		return a.ProcessTGZ(f, name, archive)
+		return a.ProcessTGZ(fsys, name, archive)
 	case ".zip":
-		return a.ProcessZipFile(f, name, archive)
+		return a.ProcessZipFile(fsys, name, archive)
 	}
-	return a.ProcessTextFile(f, name, archive)
+	if len(a.mask) > 0 {
+		if m, _ := filepath.Match(a.mask, filepath.Base(name)); !m {
+			return nil
+		}
+	}
+	return a.ProcessTextFile(fsys, name, archive)
 }
 
 // ProcessTextFiles opens the file, determine the charset, and uses the correct decoder
-func (a *App) ProcessTextFile(f fs.File, name string, archive string) error {
+func (a *App) ProcessTextFile(fsys fs.FS, name string, archive string) error {
 	// regular files
 	sniff := make([]byte, 512)
 
-	_, err := f.Read(sniff)
+	f, err := fsys.Open(name)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	_, err = f.Read(sniff)
 	if err != nil && err != io.EOF {
 		return err
 	}
@@ -166,7 +175,12 @@ func readerAtFrom(f fs.File) (io.ReaderAt, int64, string, error) {
 }
 
 // ProcessZipFile open the archive and process each archived file
-func (a *App) ProcessZipFile(f fs.File, path string, archive string) error {
+func (a *App) ProcessZipFile(fsys fs.FS, path string, archive string) error {
+	f, err := fsys.Open(path)
+	if err != nil {
+		return err
+	}
+
 	s, err := f.Stat()
 	if err != nil {
 		return err
@@ -178,7 +192,11 @@ func (a *App) ProcessZipFile(f fs.File, path string, archive string) error {
 	return a.ProcessArchive(zfs, path)
 }
 
-func (a *App) ProcessTGZ(f fs.File, path string, archive string) error {
+func (a *App) ProcessTGZ(fsys fs.FS, path string, archive string) error {
+	f, err := fsys.Open(path)
+	if err != nil {
+		return err
+	}
 	t, err := mytgzfs.Reader(f, path)
 	if err != nil {
 		return err

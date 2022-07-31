@@ -1,11 +1,11 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"flag"
 	"fmt"
 	"io"
-	"path/filepath"
 	"regexp"
 	"runtime"
 	"sync/atomic"
@@ -31,8 +31,7 @@ type App struct {
 	bytesRead   int64
 	filesParsed int64
 	hitCount    int64
-	group       errgroup.Group
-	limiter     *Limiter
+	group       *errgroup.Group
 }
 
 type colorSet struct {
@@ -40,17 +39,22 @@ type colorSet struct {
 }
 
 // Run the application
-func (a *App) Run() error {
+func (a *App) Run(ctx context.Context) error {
+	a.group, ctx = errgroup.WithContext(ctx)
+	if a.numWorker > 0 {
+		a.group.SetLimit(a.numWorker)
+	} else {
+		a.group.SetLimit(1)
+	}
 	lfs, err := listfs.Open(a.files)
 	if err != nil {
 		return err
 	}
-	return a.ProcessArchive(lfs, "")
-}
-
-func (a *App) IsMatch(f string) bool {
-	m, _ := filepath.Match(a.mask, filepath.Base(f))
-	return m
+	err = a.ProcessArchive(ctx, lfs, "")
+	if err != nil {
+		return err
+	}
+	return a.group.Wait()
 }
 
 type Hit struct {

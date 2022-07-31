@@ -20,7 +20,7 @@
         //"20633","C:/temp/2022-07-27/AnyERPFiles_270722_1012.zip"]
         // "ORA-00001","DATA/BIGLOG.zip"]
         // "ORA-\\d{5}","DATA/BIGLOG.zip"]
-        "</?FREE_TEXT>", "C:/Users/jf.cassan/Documents/data/invoicesfiles/archives"
+       "</?FREE_TEXT>", "C:/Users/jf.cassan/Documents/data/invoicesfiles/archives"
     }
   ]
 }

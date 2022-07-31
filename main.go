@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"time"
@@ -15,7 +16,8 @@ func main() {
 		os.Exit(-1)
 	}
 	t0 := time.Now()
-	err = app.Run()
+
+	err = app.Run(context.Background())
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(-1)

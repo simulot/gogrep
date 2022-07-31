@@ -1,16 +1,16 @@
 package main
 
 import (
-	"io"
+	"io/fs"
 	"strings"
 	"sync/atomic"
 
 	"github.com/xuri/excelize/v2"
 )
 
-func (a *App) ProcessXlsxFile(r io.Reader, name string) error {
+func (a *App) ProcessXlsxFile(f fs.File, name, archive string) error {
 	atomic.AddInt64(&a.filesParsed, 1)
-	wb, err := excelize.OpenReader(a.CountReader(r))
+	wb, err := excelize.OpenReader(a.CountReader(f))
 	if err != nil {
 		return err
 	}
@@ -22,15 +22,15 @@ func (a *App) ProcessXlsxFile(r io.Reader, name string) error {
 		}
 		for r, cells := range rows {
 			for c, cell := range cells {
-				if a.regEpxSearch {
+				if !a.stringExpSearch {
 					loc := a.regexp.FindStringIndex(cell)
 					if loc == nil {
 						continue
 					}
 					grid, _ := excelize.CoordinatesToCellName(c+1, r+1)
 					a.OutputHit(Hit{
-						Archive:    name,
-						File:       sheet + "[" + grid + "]",
+						Archive:    archive,
+						File:       name + "!" + sheet + "[" + grid + "]",
 						LineNumber: r,
 						Line:       cell,
 						Loc:        loc,
@@ -45,7 +45,7 @@ func (a *App) ProcessXlsxFile(r io.Reader, name string) error {
 				grid, _ := excelize.CoordinatesToCellName(c+1, r+1)
 				a.OutputHit(Hit{
 					Archive:    name,
-					File:       sheet + "[" + grid + "]",
+					File:       name + "!" + sheet + "[" + grid + "]",
 					LineNumber: r,
 					Line:       cell,
 					Loc:        []int{i, i + len(a.string)},

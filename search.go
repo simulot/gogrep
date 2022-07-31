@@ -1,14 +1,10 @@
 package main
 
 import (
-	"archive/tar"
-	"archive/zip"
 	"bufio"
 	"bytes"
-	"compress/gzip"
 	"io"
 	"io/fs"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -18,28 +14,58 @@ import (
 
 	"fmt"
 
-	"golang.org/x/sync/errgroup"
+	mytgzfs "github.com/simulot/gogrep/mytarfs"
+	"github.com/simulot/gogrep/myzipfs"
 	"golang.org/x/text/encoding/unicode"
 	"golang.org/x/text/transform"
 )
 
-func (a *App) ProcessFile(f fs.File, archive string) error {
-	sniff := make([]byte, 512)
+type Nexter interface {
+	Next(mask string) (fs.File, string, error)
+}
 
-	fInfo, err := f.Stat()
-	if err != nil {
-		return err
+func (a *App) ProcessArchive(n Nexter, archive string) error {
+	for {
+		f, name, err := n.Next(a.mask)
+		if err == io.EOF {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+
+		err = a.ProcessAnyFile(f, name, archive)
+		if err != nil {
+			return err
+		}
 	}
-	if fInfo.Size() == 0 {
-		return nil
-	}
-	name := fInfo.Name()
+	return nil
+}
+
+// Process any file to apply the appropriate treatment for zip, xlsx, tar, tgz files, and handling char set for text files
+func (a *App) ProcessAnyFile(f fs.File, name string, archive string) error {
+	defer f.Close()
+
 	ext := strings.ToLower(filepath.Ext(name))
 	switch ext {
 	case ".gsheet", ".gslides", ".gdoc", ".eps":
-		return nil
+		return nil // Discard gsuite files that would need a special treatment
+	case ".xlsx":
+		return a.ProcessXlsxFile(f, name, archive)
+	case ".tgz":
+		return a.ProcessTGZ(f, name, archive)
+	case ".zip":
+		return a.ProcessZipFile(f, name, archive)
 	}
-	_, err = f.Read(sniff)
+	return a.ProcessTextFile(f, name, archive)
+}
+
+// ProcessTextFiles opens the file, determine the charset, and uses the correct decoder
+func (a *App) ProcessTextFile(f fs.File, name string, archive string) error {
+	// regular files
+	sniff := make([]byte, 512)
+
+	_, err := f.Read(sniff)
 	if err != nil && err != io.EOF {
 		return err
 	}
@@ -47,25 +73,26 @@ func (a *App) ProcessFile(f fs.File, archive string) error {
 	mr := io.MultiReader(bytes.NewReader(sniff), f)
 	t := http.DetectContentType(sniff)
 	switch {
-	case t == "application/zip" && ext == ".zip":
-		return a.ProcessZipFile(mr, f)
-	case t == "application/zip" && ext == ".xlsx":
-		return a.ProcessXlsxFile(mr, name)
-	case t == "application/x-gzip":
-		return a.ProcessTGZ(mr, f)
-	// case "application/x-rar-compressed"
-	// case "application/x-rar-compressed"
 	case t == "text/plain; charset=utf-16be":
 		return a.ProcessUTF16be(mr, name, archive)
 	case t == "text/plain; charset=utf-16le":
 		return a.ProcessUTF16le(mr, name, archive)
 	case t == "text/plain; charset=utf-8" || t == "text/xml; charset=utf-8" || t == "application/octet-stream":
 		return a.ProcessUTF8(mr, name, archive)
-	default:
-		//fmt.Println("Skiping", name, t)
 	}
-
 	return nil
+}
+
+// ProcessUTF16be convert UTF16be file into UTF8
+func (a *App) ProcessUTF16be(r io.Reader, name, archive string) error {
+	r = transform.NewReader(r, unicode.UTF16(unicode.BigEndian, unicode.UseBOM).NewDecoder())
+	return a.ProcessUTF8(r, name, archive)
+}
+
+// ProcessUTF16le convert UTF16le file into UTF8
+func (a *App) ProcessUTF16le(r io.Reader, name, archive string) error {
+	r = transform.NewReader(r, unicode.UTF16(unicode.LittleEndian, unicode.UseBOM).NewDecoder())
+	return a.ProcessUTF8(r, name, archive)
 }
 
 var bufferPool = sync.Pool{
@@ -74,17 +101,20 @@ var bufferPool = sync.Pool{
 	},
 }
 
+// ProcessUTF8 for ascii and utf8 files
 func (a *App) ProcessUTF8(r io.Reader, name string, archive string) error {
-	atomic.AddInt64(&a.filesParsed, 1)
-	s := bufio.NewScanner(a.CountReader(r))
-	buffer := bufferPool.Get().([]byte)
-	defer bufferPool.Put(buffer)
-	s.Buffer(buffer, 512*1024)
+	defer atomic.AddInt64(&a.filesParsed, 1)
+	br := bufio.NewReader(a.CountReader(r))
 	line := 0
-	for s.Scan() {
+	var err error
+	for {
+		s, err := br.ReadString('\n')
+		if err != nil {
+			break
+		}
 		line++
-		if a.regEpxSearch {
-			loc := a.regexp.FindIndex(s.Bytes())
+		if !a.stringExpSearch {
+			loc := a.regexp.FindStringIndex(s)
 			if loc == nil {
 				continue
 			}
@@ -92,13 +122,13 @@ func (a *App) ProcessUTF8(r io.Reader, name string, archive string) error {
 				Archive:    archive,
 				File:       name,
 				LineNumber: line,
-				Line:       s.Text(),
+				Line:       s,
 				Loc:        loc,
 			})
 			continue
 		}
 
-		i := bytes.Index(s.Bytes(), []byte(a.string))
+		i := strings.Index(s, a.string)
 		if i < 0 {
 			continue
 		}
@@ -106,27 +136,19 @@ func (a *App) ProcessUTF8(r io.Reader, name string, archive string) error {
 			Archive:    archive,
 			File:       name,
 			LineNumber: line,
-			Line:       s.Text(),
+			Line:       s,
 			Loc:        []int{i, i + len(a.string)},
 		})
 		continue
 	}
-	if s.Err() != nil {
-		return fmt.Errorf("can't process '%s', at line %d, %w", name, line, s.Err())
+	if err == io.EOF || err == nil {
+		return nil
 	}
-	return nil
+	return fmt.Errorf("can't process '%s', at line %d, %w", name, line, err)
 }
 
-func (a *App) ProcessUTF16be(r io.Reader, name, archive string) error {
-	r = transform.NewReader(r, unicode.UTF16(unicode.BigEndian, unicode.UseBOM).NewDecoder())
-	return a.ProcessUTF8(r, name, archive)
-}
-func (a *App) ProcessUTF16le(r io.Reader, name, archive string) error {
-	r = transform.NewReader(r, unicode.UTF16(unicode.LittleEndian, unicode.UseBOM).NewDecoder())
-	return a.ProcessUTF8(r, name, archive)
-}
-
-func readerAtFrom(r io.Reader, f fs.File) (io.ReaderAt, int64, string, error) {
+// readerAtFrom returns a ReaderAt from a fs.File by read all the stream if needed
+func readerAtFrom(f fs.File) (io.ReaderAt, int64, string, error) {
 	fi, err := f.Stat()
 	if err != nil {
 		return nil, 0, "", err
@@ -136,111 +158,30 @@ func readerAtFrom(r io.Reader, f fs.File) (io.ReaderAt, int64, string, error) {
 		return osF, fi.Size(), fi.Name(), nil
 	}
 
-	b, err := io.ReadAll(r)
+	b, err := io.ReadAll(f)
 	if err != nil {
 		return nil, 0, "", err
 	}
 	return bytes.NewReader(b), int64(len(b)), fi.Name(), nil
 }
 
-func (a *App) ProcessZipFile(r io.Reader, archive fs.File) error {
-	readerAt, size, archiveName, err := readerAtFrom(r, archive)
+// ProcessZipFile open the archive and process each archived file
+func (a *App) ProcessZipFile(f fs.File, path string, archive string) error {
+	s, err := f.Stat()
 	if err != nil {
 		return err
 	}
-
-	zipReader, err := zip.NewReader(readerAt, size)
+	zfs, err := myzipfs.Reader(f, s.Size())
 	if err != nil {
 		return err
 	}
-
-	group := errgroup.Group{}
-
-	for _, zipEntry := range zipReader.File {
-		if !zipEntry.FileInfo().IsDir() && zipEntry.FileInfo().Size() > 0 {
-			if len(a.mask) > 0 && !a.IsMatch(zipEntry.Name) {
-				continue
-			}
-			zipEntry := zipEntry
-			a.limiter.Start()
-			group.Go(func() error {
-				defer a.limiter.Done()
-				f, err := zipEntry.Open()
-				if err != nil {
-					return fmt.Errorf("can't process file '%s' from archive '%s', %w", zipEntry.Name, archiveName, err)
-				}
-				defer f.Close()
-				fs := f.(fs.File)
-				err = a.ProcessFile(fs, archiveName)
-				if err != nil {
-					return fmt.Errorf("can't process file '%s' from archive '%s', %w", zipEntry.Name, archiveName, err)
-				}
-				return err
-			})
-		}
-	}
-	return group.Wait()
+	return a.ProcessArchive(zfs, path)
 }
 
-type tarFile struct {
-	*tar.Header
-	io.Reader
-}
-
-func (tf *tarFile) Stat() (fs.FileInfo, error) {
-	return tf.FileInfo(), nil
-}
-func (tf *tarFile) Close() error {
-	return nil
-}
-
-func (a *App) ProcessTGZ(r io.Reader, archive fs.File) error {
-	fi, err := archive.Stat()
+func (a *App) ProcessTGZ(f fs.File, path string, archive string) error {
+	t, err := mytgzfs.Reader(f, path)
 	if err != nil {
 		return err
 	}
-	zipReader, err := gzip.NewReader(r)
-	if err != nil {
-		return err
-	}
-
-	group := errgroup.Group{}
-	tarReader := tar.NewReader(zipReader)
-
-	for {
-		header, err := tarReader.Next()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return fmt.Errorf("can't decompress tgz file %s, %w", fi.Name(), err)
-		}
-		if header.Typeflag != tar.TypeReg {
-			continue
-		}
-		if len(a.mask) > 0 && !a.IsMatch(header.Name) {
-			io.Copy(ioutil.Discard, tarReader)
-			continue
-		}
-
-		b, err := io.ReadAll(tarReader)
-		if err != nil {
-			return err
-		}
-		a.limiter.Start()
-		group.Go(func() error {
-			defer a.limiter.Done()
-			file := &tarFile{
-				Header: header,
-				Reader: bytes.NewReader(b),
-			}
-			err = a.ProcessFile(file, fi.Name())
-			if err != nil {
-				return fmt.Errorf("can't process file '%s' from archive '%s', %w", header.Name, fi.Name(), err)
-			}
-			return err
-		})
-	}
-
-	return group.Wait()
+	return a.ProcessArchive(t, path)
 }

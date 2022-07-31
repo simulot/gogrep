@@ -122,23 +122,8 @@ func (a *App) ProcessUTF8(r io.Reader, name string, archive string) error {
 			break
 		}
 		line++
-		if !a.stringExpSearch {
-			loc := a.regexp.FindStringIndex(s)
-			if loc == nil {
-				continue
-			}
-			a.OutputHit(Hit{
-				Archive:    archive,
-				File:       name,
-				LineNumber: line,
-				Line:       s,
-				Loc:        loc,
-			})
-			continue
-		}
-
-		i := strings.Index(s, a.string)
-		if i < 0 {
+		loc := a.regexp.FindStringIndex(s)
+		if loc == nil {
 			continue
 		}
 		a.OutputHit(Hit{
@@ -146,9 +131,8 @@ func (a *App) ProcessUTF8(r io.Reader, name string, archive string) error {
 			File:       name,
 			LineNumber: line,
 			Line:       s,
-			Loc:        []int{i, i + len(a.string)},
+			Loc:        loc,
 		})
-		continue
 	}
 	if err == io.EOF || err == nil {
 		return nil

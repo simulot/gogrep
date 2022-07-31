@@ -2,7 +2,6 @@ package main
 
 import (
 	"io/fs"
-	"strings"
 	"sync/atomic"
 
 	"github.com/xuri/excelize/v2"
@@ -27,35 +26,18 @@ func (a *App) ProcessXlsxFile(fsys fs.FS, name, archive string) error {
 		}
 		for r, cells := range rows {
 			for c, cell := range cells {
-				if !a.stringExpSearch {
-					loc := a.regexp.FindStringIndex(cell)
-					if loc == nil {
-						continue
-					}
-					grid, _ := excelize.CoordinatesToCellName(c+1, r+1)
-					a.OutputHit(Hit{
-						Archive:    archive,
-						File:       name + "!" + sheet + "[" + grid + "]",
-						LineNumber: r,
-						Line:       cell,
-						Loc:        loc,
-					})
-					continue
-				}
-
-				i := strings.Index(cell, a.string)
-				if i < 0 {
+				loc := a.regexp.FindStringIndex(cell)
+				if loc == nil {
 					continue
 				}
 				grid, _ := excelize.CoordinatesToCellName(c+1, r+1)
 				a.OutputHit(Hit{
-					Archive:    name,
+					Archive:    archive,
 					File:       name + "!" + sheet + "[" + grid + "]",
 					LineNumber: r,
 					Line:       cell,
-					Loc:        []int{i, i + len(a.string)},
+					Loc:        loc,
 				})
-				continue
 			}
 		}
 	}

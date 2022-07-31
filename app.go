@@ -19,16 +19,14 @@ var isWindowsOS = runtime.GOOS == "windows"
 
 // App represents application settings and run execution
 type App struct {
-	regexp          *regexp.Regexp
-	string          string
-	stringExpSearch bool
-	count           bool
-	ignoreCase      bool
-	numWorker       int
-	mask            string
-	useColors       bool
-	colorSet        colorSet
-	files           []string
+	regexp     *regexp.Regexp
+	count      bool
+	ignoreCase bool
+	numWorker  int
+	mask       string
+	useColors  bool
+	colorSet   colorSet
+	files      []string
 
 	bytesRead   int64
 	filesParsed int64
@@ -89,7 +87,6 @@ func (a *App) OutputHit(h Hit) {
 func (a *App) Commandline() error {
 	flag.BoolVar(&a.count, "count", false, "Count matching lines")
 	flag.BoolVar(&a.ignoreCase, "ignore-case", false, "Ignore case distinction")
-	flag.BoolVar(&a.stringExpSearch, "s", false, "PATTERN is a simple string")
 	flag.IntVar(&a.numWorker, "num-worker", runtime.NumCPU(), "Number of worker to be used")
 	flag.StringVar(&a.mask, "mask", "*.*", "search only in files following the mask inside archive file")
 	flag.BoolVar(&a.useColors, "color", !isWindowsOS, "Use colored outputs")
@@ -106,15 +103,12 @@ func (a *App) Commandline() error {
 
 	a.files = args[1:]
 
-	if a.stringExpSearch {
-		a.string = args[0]
-	} else {
-		r, err := regexp.Compile(args[0])
-		if err != nil {
-			return a.Usage(err)
-		}
-		a.regexp = r
+	r, err := regexp.Compile(args[0])
+	if err != nil {
+		return a.Usage(err)
 	}
+
+	a.regexp = r
 	if a.useColors {
 		a.colorSet = colorSet{
 			archive:   chalk.Cyan.Color,
@@ -129,7 +123,7 @@ func (a *App) Commandline() error {
 
 func (a App) Usage(e error) error {
 	fmt.Println("gogrep {option, ...} PATTERN FileOrDir, ...")
-	fmt.Println("\tPATTERN could be a regular expression or a simple string")
+	fmt.Println("\tPATTERN is a regular expression")
 	flag.Usage()
 	if e != nil {
 		fmt.Println(e.Error())
